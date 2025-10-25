@@ -1,6 +1,7 @@
 ---
 system_users_additional_packages:
   - "shadow-useradd"
+  - "shadow-usermod"
   - "sudo"
 shells:
   "ash": "/bin/ash"
