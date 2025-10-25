@@ -1,10 +1,11 @@
 ---
 # Update Cache for different OSes
-- name: MMN Packages - Updating cache Alpine
+- name: MMN Packages - Updating cache apk
   community.general.apk:
     update_cache: true
   changed_when: false
-  when: ansible_distribution == "Alpine"
+  when: (ansible_distribution is defined and ansible_distribution == "Alpine") or
+        (ansible_packages_pkg_manager is defined and ansible_packages_pkg_manager == "apk")
 - name: MMN Packages - Updating cache Debian based OS
   ansible.builtin.apt:
     update_cache: true

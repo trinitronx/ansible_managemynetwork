@@ -1,0 +1,92 @@
+- name: MMN Packages - Set OpenWrt version if facts set
+  check_mode: false
+  changed_when: false
+  ansible.builtin.set_fact:
+    ansible_packages_is_openwrt: "{{ (ansible_distribution == 'OpenWrt' or ansible_distribution | regex_search('Wrt|LEDE', ignorecase=True)) is truthy }}"
+    ansible_packages_openwrt_version: "{{ ansible_distribution_version }}"
+    ansible_packages_openwrt_major_version: "{{ ansible_distribution_major_version | int }}"
+    ansible_packages_openwrt_minor_version: "{{ 1 | extract(ansible_distribution_version.split('.')) | default('') | int }}"
+  failed_when: false
+  when: >
+        ansible_packages_openwrt_version is not defined and
+        ansible_distribution_version is defined and
+        ansible_distribution_major_version is defined
+
+- name: MMN Packages - Gather Distro ID_LIKE if facts NOT set
+  check_mode: false
+  changed_when: false
+  ansible.builtin.raw: grep ID_LIKE /etc/os-release | cut -f2 -d= | tr -d '"'
+  register: ansible_packages_openwrt_id_like
+  failed_when: false
+  when: ansible_distribution is not defined
+
+- name: MMN Packages - Gather OpenWrt version if facts NOT set
+  check_mode: false
+  changed_when: false
+  ansible.builtin.raw: grep VERSION_ID /etc/os-release | cut -f2 -d= | tr -d '"'
+  register: ansible_packages_openwrt_version_raw
+  failed_when: false
+  when: >
+        not (ansible_packages_openwrt_version is defined or
+             ansible_packages_openwrt_major_version is defined or
+             ansible_packages_openwrt_minor_version is defined or
+             ansible_distribution_major_version is defined or
+             ansible_distribution_version is defined)
+
+- name: MMN Packages - Set is OpenWrt bool if facts NOT set
+  check_mode: false
+  changed_when: false
+  ansible.builtin.set_fact:
+    ansible_packages_is_openwrt: "{{ (ansible_packages_openwrt_id_like.stdout_lines[0] | regex_search('Wrt|LEDE', ignorecase=True)) is truthy }}"
+  failed_when: false
+  when: ansible_packages_is_openwrt is not defined
+
+- name: MMN Packages - Set OpenWrt version if facts NOT set
+  check_mode: false
+  changed_when: false
+  ansible.builtin.set_fact:
+    ansible_packages_openwrt_version: "{{ ansible_packages_openwrt_version_raw.stdout_lines[0] }}"
+    ansible_packages_openwrt_major_version: "{{ 0 | extract(ansible_packages_openwrt_version_raw.stdout_lines[0].split('.')) | default('') | int }}"
+    ansible_packages_openwrt_minor_version: "{{ 1 | extract(ansible_packages_openwrt_version_raw.stdout_lines[0].split('.')) | default('') | int }}"
+  failed_when: false
+  when: >
+        not (ansible_distribution_major_version is defined or
+             ansible_distribution_version is defined)
+
+- name: Check for opkg
+  check_mode: false
+  changed_when: false
+  ansible.builtin.shell: command -v opkg
+  register: ansible_packages_openwrt_opkg
+  failed_when: false
+
+- name: Check for apk
+  check_mode: false
+  changed_when: false
+  ansible.builtin.shell: command -v apk
+  register: ansible_packages_openwrt_apk
+  failed_when: false
+
+- name: Use opkg on appropriate OpenWRT version
+  check_mode: false
+  changed_when: false
+  ansible.builtin.set_fact:
+    ansible_packages_pkg_manager: opkg
+  when: >
+    (ansible_packages_openwrt_version != "snapshot" and ((ansible_packages_openwrt_major_version | int) < 24))
+    or ((ansible_packages_openwrt_version != "snapshot"
+          or (ansible_packages_openwrt_major_version | int) >= 24)
+        and ansible_packages_openwrt_apk.rc != 0
+        and ansible_packages_openwrt_opkg.rc == 0)
+
+- name: Use apk on appropriate OpenWRT version
+  check_mode: false
+  changed_when: false
+  ansible.builtin.set_fact:
+    ansible_packages_pkg_manager: apk
+  when: >
+    (ansible_packages_openwrt_version == "snapshot"
+      or ((ansible_packages_openwrt_major_version | int) >= 24
+      and (ansible_packages_openwrt_minor_version | int) >= 10))
+    and ansible_packages_openwrt_apk.rc == 0
+    and (ansible_packages_openwrt_apk.stdout_lines[0] | regex_search('.*/apk$')) is truthy

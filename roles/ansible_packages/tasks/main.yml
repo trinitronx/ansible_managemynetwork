@@ -1,4 +1,12 @@
 ---
+- name: MMN Packages - Detect OpenWrt package manager
+  include_tasks: "0detect-pkg-manager.yml"
+  when: (packages_runimagebuilder | default(false)) is not truthy and
+        ansible_distribution is defined and
+        (ansible_distribution == 'OpenWrt' or
+         (ansible_distribution | regex_search('Wrt|LEDE', ignorecase=True) is truthy))
+        or ansible_distribution is not defined
+
 - name: MMN Packages - Prepare install variables
   include_tasks: "1prepare_install.yml"
 
