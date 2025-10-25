@@ -1,21 +1,34 @@
 ---
 - name: MMN Packages - List of packages to be installed
   debug:
-    var: packages_install
+    var: packages_install is truthy
 - name: MMN Packages - Installing packages non OpenWrt
   ansible.builtin.package:
     name: "{{ packages_install }}"
     state: present
   when:
     - packages_install is truthy
-    - ansible_distribution != 'OpenWrt'
+    - (ansible_distribution is defined and ansible_distribution != 'OpenWrt') or
+      (ansible_packages_pkg_manager is defined and ansible_packages_pkg_manager != "opkg" and
+       ansible_packages_pkg_manager != "apk")
     - not packages_runimagebuilder | default(false) | bool
-- name: MMN Packages - Installing packages OpenWrt
+- name: MMN Packages - Installing packages OpenWrt (opkg)
   ansible.builtin.opkg:
     name: "{{ packages_install | join(packages_separator) }}"
     state: present
     update_cache: true
   when:
     - packages_install is truthy
-    - ansible_distribution == 'OpenWrt'
+    - (ansible_distribution is defined and ansible_distribution == 'OpenWrt') or
+      (ansible_packages_pkg_manager is defined and ansible_packages_pkg_manager == "opkg")
+    - not packages_runimagebuilder | default(false) | bool
+- name: MMN Packages - Installing packages OpenWrt (apk)
+  ansible.builtin.apk:
+    name: "{{ packages_install | join(packages_separator) }}"
+    state: present
+    update_cache: true
+  when:
+    - packages_install is truthy
+    - (ansible_distribution is defined and ansible_distribution == 'OpenWrt') or
+      (ansible_packages_pkg_manager is defined and ansible_packages_pkg_manager == "apk")
     - not packages_runimagebuilder | default(false) | bool

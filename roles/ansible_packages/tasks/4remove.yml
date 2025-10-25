@@ -8,14 +8,27 @@
     state: absent
   when:
     - packages_remove is truthy
-    - ansible_distribution != 'OpenWrt'
+    - (ansible_distribution is defined and ansible_distribution != 'OpenWrt') or
+      (ansible_packages_pkg_manager is defined and ansible_packages_pkg_manager != "opkg" and
+       ansible_packages_pkg_manager != "apk")
     - not packages_runimagebuilder | default(false) | bool
-- name: MMN Packages - Uninstalling packages OpenWrt
+- name: MMN Packages - Uninstalling packages OpenWrt (opkg)
   ansible.builtin.opkg:
     name: "{{ packages_remove | join(packages_separator) }}"
     state: absent
     update_cache: true
   when:
     - packages_remove is truthy
-    - ansible_distribution == 'OpenWrt'
+    - (ansible_distribution is defined and ansible_distribution == 'OpenWrt') and
+      (ansible_packages_pkg_manager is defined and ansible_packages_pkg_manager == "opkg")
+    - not packages_runimagebuilder | default(false) | bool
+- name: MMN Packages - Uninstalling packages OpenWrt (apk)
+  ansible.builtin.apk:
+    name: "{{ packages_remove | join(packages_separator) }}"
+    state: absent
+    update_cache: true
+  when:
+    - packages_remove is truthy
+    - (ansible_distribution is defined and ansible_distribution == 'OpenWrt') and
+      (ansible_packages_pkg_manager is defined and ansible_packages_pkg_manager == "apk")
     - not packages_runimagebuilder | default(false) | bool
