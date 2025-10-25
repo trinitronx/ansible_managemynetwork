@@ -6,7 +6,9 @@
         var: user.key
     - name: MMN users - Set fact for package install
       ansible.builtin.set_fact:
-        packages_installrole: "{{ shellpackages[user.value.shell] }}"
+        packages_installrole: >-
+          {{ (packages_installrole | default([]))
+             + ([ shellpackages[user.value.shell] ] | default([]) ) }}
       when:
         - user.value.shell is defined
     - name: MMN users - Install package for shell

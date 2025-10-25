@@ -11,11 +11,9 @@
         - "vars"
   when: system_users is defined
 
-# this should be optimized. The role for packages should be called instead of using builtin.package
-- name: MMN users - Install OpenWrt specific packages
-  community.general.opkg:
-    name: "{{ system_users_additional_packages }}"
-    state: present
+- name: MMN users - Set fact for OpenWrt specific packages install
+  ansible.builtin.set_fact:
+    packages_installrole: "{{ (packages_installrole | default([])) + (system_users_additional_packages | default([])) }}"
   when: ansible_facts['os_family'] in ["OpenWrt", "LEDE", "Divested-WRT"]
 
 - name: check and deploy block
