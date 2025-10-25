@@ -8,7 +8,7 @@
     state: present
   when:
     - packages_install is truthy
-    - (ansible_distribution is defined and ansible_distribution != 'OpenWrt') or
+    - ansible_packages_is_openwrt is not truthy or
       (ansible_packages_pkg_manager is defined and ansible_packages_pkg_manager != "opkg" and
        ansible_packages_pkg_manager != "apk")
     - not packages_runimagebuilder | default(false) | bool
@@ -19,7 +19,7 @@
     update_cache: true
   when:
     - packages_install is truthy
-    - (ansible_distribution is defined and ansible_distribution == 'OpenWrt') or
+    - ansible_packages_is_openwrt is truthy and
       (ansible_packages_pkg_manager is defined and ansible_packages_pkg_manager == "opkg")
     - not packages_runimagebuilder | default(false) | bool
 - name: MMN Packages - Installing packages OpenWrt (apk)
@@ -29,6 +29,6 @@
     update_cache: true
   when:
     - packages_install is truthy
-    - (ansible_distribution is defined and ansible_distribution == 'OpenWrt') or
+    - ansible_packages_is_openwrt is truthy and
       (ansible_packages_pkg_manager is defined and ansible_packages_pkg_manager == "apk")
     - not packages_runimagebuilder | default(false) | bool

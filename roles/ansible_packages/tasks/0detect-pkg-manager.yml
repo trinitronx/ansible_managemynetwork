@@ -73,6 +73,7 @@
   ansible.builtin.set_fact:
     ansible_packages_pkg_manager: opkg
   when: >
+    ansible_packages_is_openwrt is truthy and
     (ansible_packages_openwrt_version != "snapshot" and ((ansible_packages_openwrt_major_version | int) < 24))
     or ((ansible_packages_openwrt_version != "snapshot"
           or (ansible_packages_openwrt_major_version | int) >= 24)
@@ -85,6 +86,7 @@
   ansible.builtin.set_fact:
     ansible_packages_pkg_manager: apk
   when: >
+    ansible_packages_is_openwrt is truthy and
     (ansible_packages_openwrt_version == "snapshot"
       or ((ansible_packages_openwrt_major_version | int) >= 24
       and (ansible_packages_openwrt_minor_version | int) >= 10))
